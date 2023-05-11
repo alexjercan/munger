@@ -5,15 +5,15 @@ use std::{
 
 use clap::Parser;
 
-/// Simple program to munge a wordlist
+/// Simple program to munge a wordlist into a password list
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Path to the wordlist to munge
+    /// Path to the wordlist to munge; will use stdin if not specified
     #[arg(short, long)]
     wordlist: Option<String>,
 
-    /// Path to the output file
+    /// Path to the output file; will use stdout if not specified
     #[arg(short, long)]
     output: Option<String>,
 
