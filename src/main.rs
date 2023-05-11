@@ -1,3 +1,8 @@
+use std::{
+    fs::File,
+    io::{self, BufRead, BufReader, Stdin},
+};
+
 use clap::Parser;
 
 /// Simple program to munge a wordlist
@@ -17,8 +22,23 @@ struct Args {
     level: u8,
 }
 
+fn read_words(file: &Option<String>) -> Result<Vec<String>, io::Error> {
+    let input: Box<dyn io::Read> = match file {
+        Some(file) => Box::new(File::open(file)?),
+        None => Box::new(io::stdin()),
+    };
+
+    return Ok(BufReader::new(input)
+        .lines()
+        .into_iter()
+        .flatten()
+        .collect());
+}
+
 fn main() {
     let args = Args::parse();
-    println!("{:?}", args);
 
+    let words = read_words(&args.wordlist).unwrap();
+
+    println!("{:?}", words);
 }
