@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, BufRead, BufReader, Stdin},
+    io::{self, BufRead, BufReader, BufWriter, Write},
 };
 
 use clap::Parser;
@@ -28,11 +28,21 @@ fn read_words(file: &Option<String>) -> Result<Vec<String>, io::Error> {
         None => Box::new(io::stdin()),
     };
 
-    return Ok(BufReader::new(input)
-        .lines()
-        .into_iter()
-        .flatten()
-        .collect());
+    return BufReader::new(input).lines().into_iter().collect();
+}
+
+fn write_words(words: &Vec<String>, file: &Option<String>) -> Result<(), io::Error> {
+    let output: Box<dyn io::Write> = match file {
+        Some(file) => Box::new(File::create(file)?),
+        None => Box::new(io::stdout()),
+    };
+
+    let mut stream = BufWriter::new(output);
+    words
+        .iter()
+        .map(|word| stream.write_all(format!("{word}\n").as_bytes()))
+        .collect::<Result<_, _>>()?;
+    return stream.flush();
 }
 
 fn main() {
@@ -40,5 +50,5 @@ fn main() {
 
     let words = read_words(&args.wordlist).unwrap();
 
-    println!("{:?}", words);
+    write_words(&words, &args.output).unwrap();
 }
