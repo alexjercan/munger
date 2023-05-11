@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     fs::File,
     io::{self, BufRead, BufReader, BufWriter, Write},
 };
@@ -16,10 +17,6 @@ struct Args {
     /// Path to the output file; will use stdout if not specified
     #[arg(short, long)]
     output: Option<String>,
-
-    /// Munge level
-    #[arg(short, long, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..9))]
-    level: u8,
 }
 
 fn read_words(file: &Option<String>) -> Result<Vec<String>, io::Error> {
@@ -45,10 +42,51 @@ fn write_words(words: &Vec<String>, file: &Option<String>) -> Result<(), io::Err
     return stream.flush();
 }
 
+fn leet_speak(word: &str) -> Vec<String> {
+    // TODO: with combinations
+    return vec![
+        word.to_string(),
+        word.replace("e", "3"),
+        word.replace("a", "4"),
+        word.replace("o", "0"),
+        word.replace("i", "!"),
+        word.replace("i", "1"),
+        word.replace("l", "1"),
+        word.replace("a", "@"),
+        word.replace("s", "$"),
+        word.replace("s", "5"),
+        word.replace("t", "7"),
+    ];
+}
+
+fn word_capitalization(word: &str) -> Vec<String> {
+    return vec![
+        word.to_string(),
+        word.to_lowercase(),
+        word.to_uppercase(),
+        word[0..1].to_uppercase() + &word[1..],
+    ];
+}
+
+fn munge_word(word: &str) -> Vec<String> {
+    let mut words = vec![word.to_string()];
+
+    words.extend(leet_speak(word));
+    words.extend(word_capitalization(word));
+
+    return words
+        .drain(..)
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+}
+
 fn main() {
     let args = Args::parse();
 
     let words = read_words(&args.wordlist).unwrap();
+
+    let words = words.iter().flat_map(|w| munge_word(w)).collect();
 
     write_words(&words, &args.output).unwrap();
 }
