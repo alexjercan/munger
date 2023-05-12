@@ -139,17 +139,36 @@ impl MungeBlock for Capitalization {
     }
 }
 
+struct Suffix<'a> {
+    options: Vec<&'a str>,
+}
+
+impl<'a> Suffix<'a> {
+    fn new(options: &[&'a str]) -> Self {
+        let mut options = options.to_vec();
+        options.insert(0, "");
+        return Suffix { options };
+    }
+}
+
+impl<'a> MungeBlock for Suffix<'a> {
+    fn munge(&self, word: &str) -> Vec<String> {
+        return self.options.iter().map(|&s| word.to_owned() + s).collect();
+    }
+}
+
 struct Munger {
     blocks: Vec<Box<dyn MungeBlock>>,
 }
 
 impl MungeBlock for Munger {
     fn munge(&self, word: &str) -> Vec<String> {
-        let mut words = vec![word.to_string()];
-
-        for block in &self.blocks {
-            words.extend(block.munge(word));
-        }
+        let mut words = self
+            .blocks
+            .iter()
+            .fold(vec![word.to_owned()], |acc, block| {
+                acc.iter().flat_map(|w| block.munge(w)).collect()
+            });
 
         return words
             .drain(..)
@@ -167,12 +186,18 @@ macro_rules! munger {
     };
 }
 
+const SUFFIXES: [&str; 7] = ["1", "123456", "12", "2", "123", "!", "."];
+
 fn main() {
     let args = Args::parse();
 
     let words = read_words(&args.wordlist).unwrap();
 
-    let munger = munger![LeetSpeak::new(), Capitalization::new()];
+    let munger = munger![
+        LeetSpeak::new(),
+        Capitalization::new(),
+        Suffix::new(&SUFFIXES)
+    ];
 
     let words = words.iter().flat_map(|w| munger.munge(w)).collect();
 
